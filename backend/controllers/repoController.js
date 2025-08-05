@@ -1,32 +1,34 @@
-const createRepository = (req, res) => {
+const mongoose = require('mongoose');
+
+async function createRepository(req, res) {
     res.send("Repo createde");
 };
 
-const getAllRepository = (req, res) => {
+async function getAllRepository(req, res) {
     res.send("all repo fetched");
 };
 
-const fetchRepositoryById = (req, res) => {
+async function fetchRepositoryById(req, res) {
     res.send("Repo details fetched");
 };
 
-const fetchRepositoryByName = (req, res) => {
+async function fetchRepositoryByName(req, res) {
     res.send("Repo details fetched");
 };
 
-const fetchRepositoryForCurrentUser = (req, res) => {
+async function fetchRepositoryForCurrentUser(req, res) {
     res.send("Repo for logged in user");
 };
 
-const updateRepositoryById = (req, res) => {
+async function updateRepositoryById(req, res) {
     res.send("Repo updated");
 };
 
-const toggleVisibiityById = (req, res) => {
+async function toggleVisibiityById(req, res) {
     res.send("Repo public/private");
 };
 
-const deleteRepositoryById = (req, res) => {
+async function deleteRepositoryById(req, res) {
     res.send("repo deleted");
 };
 
