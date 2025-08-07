@@ -177,7 +177,7 @@ async function deleteUserProfile(req, res) {
 
         res.json({message: "User Profile Deleted."});
 
-    } catch {
+    } catch(err) {
         console.error("Error deleting profile : ", err.message);
         res.status(500).send("Server Error");
     }
