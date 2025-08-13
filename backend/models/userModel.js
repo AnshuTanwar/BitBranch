@@ -4,12 +4,12 @@ const { Schema } = mongoose;
 const userSchema = new Schema({
     username: {
         type: String,
-        require: true,
+        required: true,
         unique: true,
     },
     email: {
         type: String,
-        require: true,
+        required: true,
         unique: true,
     },
     password: {

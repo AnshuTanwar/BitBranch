@@ -10,7 +10,7 @@ const IssueSchema = new Schema({
         type: String,
         required: true,
     },
-    title: {
+    status: {
         type: String,
         enum: ["open", "closed"],
         default: "open",
