@@ -122,25 +122,63 @@ async function updateRepositoryById(req, res) {
     const { content, description } = req.body;
 
     try{
+        const repository = await Repository.findById(id);
         
+        if(!repository) {
+            return res.status(404).json({error: "User Repositories not found"});
+        }
+
+        repository.content.push(content);
+        repository.description = description;
+
+        const updatedRepository = await repository.save();
+
+        res.json({
+            message:"Repository updated successfully",
+            repository: updatedRepository,
+        })
     } catch(err) {
         console.error("Error Updating Repository : ", err.message);
         res.status(500).send("Server Error");
     }
 };
 
-async function toggleVisibiityById(req, res) {
-    try{
+async function toggleVisibilityById(req, res) {
+    const { id } = req.params;
 
+    try{
+        const repository = await Repository.findById(id);
+        
+        if(!repository) {
+            return res.status(404).json({error: "User Repositories not found"});
+        }
+
+        repository.visibility = !repository.visibility;
+
+        const updatedRepository = await repository.save();
+
+        res.json({
+            message:"Repository visibility successfully changed",
+            repository: updatedRepository,
+        })
     } catch(err) {
-        console.error("Error Toggling Visibility : ", err.message);
+        console.error("Error Toggling Repository : ", err.message);
         res.status(500).send("Server Error");
     }
 };
 
 async function deleteRepositoryById(req, res) {
+    const { id } = req.params;
     try{
+        const repository = await Repository.findByIdAndDelete(id);
 
+        if(!repository) {
+            return res.status(404).json({error: "User Repositories not found"});
+        }
+
+        res.json({
+            message: "Repository deleted successfully"
+        });
     } catch(err) {
         console.error("Error Deleting Repository : ", err.message);
         res.status(500).send("Server Error");
@@ -155,6 +193,6 @@ module.exports = {
     fetchRepositoryByName,
     fetchRepositoryForCurrentUser,
     updateRepositoryById,
-    toggleVisibiityById,
+    toggleVisibilityById,
     deleteRepositoryById,
 }
