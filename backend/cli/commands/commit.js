@@ -25,6 +25,18 @@ async function commitRepo(message) {
             await fs.copyFile(path.join(STAGING_DIR, file), path.join(commitDir, file));
         }
 
+        // Update HEAD + branch ref
+        let headContent = await fs.readFile(HEAD_FILE, "utf8").catch(() => "");
+        if (headContent.startsWith("ref:")) {
+            const branchRef = headContent.split("ref:")[1].trim();
+            await fs.writeFile(path.join(REPO_DIR, branchRef), commitID);
+            await fs.writeFile(HEAD_FILE, `ref: ${branchRef}`);
+        } else {
+            // detached HEAD, just write commit ID
+            await fs.writeFile(HEAD_FILE, commitID);
+        }
+
+
         const commitData = {
             id: commitID,
             message,

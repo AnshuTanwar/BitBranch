@@ -8,6 +8,10 @@ const {
     pullRepo,
     revertRepo,
     logRepo,
+    statusRepo,
+    diffRepo,
+    branchRepo,
+    checkoutRepo,
 } = require("./cli/commands");
 
 yargs(hideBin(process.argv))
@@ -37,6 +41,20 @@ yargs(hideBin(process.argv))
         "Show commit history from HEAD",
         y => y.option("oneline", { type: "boolean", default: false, describe: "Condensed view" }),
         argv => logRepo({ oneline: argv.oneline })
+    )
+    .command("status", "Show working tree status", {}, statusRepo)
+    .command("diff", "Show changes between working dir and last commit", {}, diffRepo)
+    .command(
+        "branch [name]",
+        "List branches or create a new one",
+        y => y.positional("name", { type: "string", describe: "Branch name" }),
+        argv => argv.name ? branchRepo(argv.name) : branchRepo()
+    )
+    .command(
+        "checkout <name>",
+        "Switch to a branch",
+        y => y.positional("name", { type: "string", describe: "Branch name" }),
+        argv => checkoutRepo(argv.name)
     )
     .demandCommand(1)
     .help().argv;
