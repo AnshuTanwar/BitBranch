@@ -2,27 +2,42 @@ const fs = require("fs").promises;
 const path = require("path");
 const { HEAD_FILE, REPO_DIR, COMMITS_DIR } = require("../constants");
 
-async function checkoutRepo(branchName) {
+async function checkoutRepo(name) {
     try {
-        const branchFile = path.join(REPO_DIR, "refs", "heads", branchName);
-
         let commitID = "";
+        let isBranch = false;
+
+        const branchFile = path.join(REPO_DIR, "refs", "heads", name);
+
+        // Try branch first
         try {
             commitID = (await fs.readFile(branchFile, "utf8")).trim();
+            isBranch = true;
         } catch {
-            console.error(`❌ Branch '${branchName}' does not exist.`);
-            return;
+            // Not a branch → maybe commit ID
+            const commitDir = path.join(COMMITS_DIR, name);
+            try {
+                await fs.access(commitDir);
+                commitID = name;
+            } catch {
+                console.error(`No branch or commit '${name}' found.`);
+                return;
+            }
         }
 
-        // update HEAD to point to branch
-        await fs.writeFile(HEAD_FILE, `ref: refs/heads/${branchName}`);
+        // Update HEAD
+        if (isBranch) {
+            await fs.writeFile(HEAD_FILE, `ref: refs/heads/${name}`);
+        } else {
+            await fs.writeFile(HEAD_FILE, commitID); // detached HEAD
+        }
 
         if (!commitID) {
-            console.log(`✅ Switched to new branch '${branchName}' (no commits yet)`);
+            console.log(`Switched to ${isBranch ? "branch" : "commit"} '${name}' (no commits yet)`);
             return;
         }
 
-        // restore files from commit
+        // Restore files from commit
         const commitDir = path.join(COMMITS_DIR, commitID);
         const files = await fs.readdir(commitDir);
         for (const f of files) {
@@ -32,9 +47,13 @@ async function checkoutRepo(branchName) {
             await fs.copyFile(src, dest);
         }
 
-        console.log(`✅ Switched to branch '${branchName}' at commit ${commitID}`);
+        if (isBranch) {
+            console.log(`Switched to branch '${name}' at commit ${commitID}`);
+        } else {
+            console.log(`Detached HEAD at commit ${commitID}`);
+        }
     } catch (err) {
-        console.error("❌ Error checking out branch:", err);
+        console.error("Error checking out:", err);
     }
 }
 

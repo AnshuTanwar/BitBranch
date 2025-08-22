@@ -23,7 +23,7 @@ yargs(hideBin(process.argv))
         argv => addRepo(argv.file)
     )
     .command(
-        "commit <message>",
+        "commit [message]",
         "Commit staged files",
         y => y.positional("message", { type: "string", describe: "Commit message" }),
         argv => commitRepo(argv.message)

@@ -1,25 +1,46 @@
 const fs = require("fs").promises;
 const path = require("path");
-const { COMMITS_DIR, HEAD_FILE } = require("../constants");
+const { COMMITS_DIR, HEAD_FILE, REPO_DIR } = require("../constants");
 
 async function logRepo({ oneline = false } = {}) {
     try {
-        let head = "";
+        let headContent = "";
         try {
-            head = (await fs.readFile(HEAD_FILE, "utf8")).trim();
+            headContent = (await fs.readFile(HEAD_FILE, "utf8")).trim();
         } catch {
             console.log("⚠️ No repository initialized or HEAD missing.");
             return;
         }
 
-        if (!head) {
+        if (!headContent) {
             console.log("ℹ️ No commits yet.");
             return;
         }
 
-        let current = head;
-        const seen = new Set();
+        let current = "";
+        let headInfo = "";
 
+        if (headContent.startsWith("ref:")) {
+            // HEAD points to a branch
+            const branchRef = headContent.split("ref:")[1].trim();
+            const branchName = branchRef.replace("refs/heads/", "");
+            headInfo = `(branch: ${branchName})`;
+
+            try {
+                current = (await fs.readFile(path.join(REPO_DIR, branchRef), "utf8")).trim();
+            } catch {
+                console.log(`⚠️ Branch '${branchName}' has no commits yet.`);
+                return;
+            }
+        } else {
+            // Detached HEAD
+            current = headContent;
+            headInfo = `(detached at ${current.slice(0, 7)})`;
+        }
+
+        console.log(`=== BitBranch Log ${headInfo} ===\n`);
+
+        const seen = new Set();
         while (current && !seen.has(current)) {
             seen.add(current);
 
@@ -43,7 +64,7 @@ async function logRepo({ oneline = false } = {}) {
             current = meta.parent || "";
         }
     } catch (err) {
-        console.error(" Error reading log:", err);
+        console.error("❌ Error reading log:", err);
     }
 }
 

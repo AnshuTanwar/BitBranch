@@ -1,6 +1,6 @@
 const fs = require("fs").promises;
 const path = require("path");
-const { HEAD_FILE, REPO_DIR, COMMITS_DIR } = require("../constants");
+const { HEAD_FILE, REPO_DIR } = require("../constants");
 
 async function branchRepo(branchName) {
     try {
@@ -11,18 +11,13 @@ async function branchRepo(branchName) {
             // list all branches
             let headContent = await fs.readFile(HEAD_FILE, "utf8").catch(() => "");
             let currentBranch = "";
+            let detachedCommit = "";
+
             if (headContent.startsWith("ref:")) {
                 currentBranch = headContent.split("ref:")[1].trim().replace("refs/heads/", "");
+            } else if (headContent) {
+                detachedCommit = headContent.trim();
             }
-
-            for (const b of branches) {
-                if (b === currentBranch) {
-                    console.log(`* ${b}`);
-                } else {
-                    console.log(`  ${b}`);
-                }
-            }
-
 
             const branches = await fs.readdir(refsDir).catch(() => []);
             for (const b of branches) {
@@ -32,6 +27,11 @@ async function branchRepo(branchName) {
                     console.log(`  ${b}`);
                 }
             }
+
+            if (detachedCommit) {
+                console.log(`(HEAD detached at ${detachedCommit})`);
+            }
+
             return;
         }
 
@@ -50,9 +50,14 @@ async function branchRepo(branchName) {
         // write new branch file
         const branchFile = path.join(refsDir, branchName);
         await fs.writeFile(branchFile, head);
-        console.log(`✅ Branch '${branchName}' created at ${head || "no commit yet"}`);
+        console.log(`Branch '${branchName}' created at ${head || "no commit yet"}`);
+
+        // After writing branch file:
+        await fs.writeFile(HEAD_FILE, `ref: refs/heads/${branchName}`);
+        console.log(`Branch '${branchName}' created at ${head || "no commit yet"} and switched to it`);
+
     } catch (err) {
-        console.error("❌ Error creating branch:", err);
+        console.error("Error creating branch: ", err);
     }
 }
 

@@ -1,164 +1,137 @@
-# 🪵 BitBranch – A GitHub-like but better VCS + Server
-
-BitBranch is a **GitHub-like system** built from scratch.
-It provides a **Git-style CLI** (`init`, `add`, `commit`, `push`, `pull`, `revert`, `log`)
-and a **server backend** (Express + MongoDB + Socket.IO) to manage repositories and users.
+# BitBranch 🪄
+A lightweight Git + GitHub–like backend CLI built with Node.js.  
+BitBranch mimics core Git workflows: init, add, commit, branch, checkout, log, push/pull, and more.
 
 ---
 
-## ✨ Features Implemented
-- **Local Version Control (CLI)**
-  - `init` – initialize a repository (`.bitbranch/`)
-  - `add` – stage files
-  - `commit` – snapshot staged files (with UUID commit IDs)
-  - `log` – view commit history (`--oneline` supported)
-  - `revert` – roll back to a specific commit (updates HEAD)
-  - `push` – sync commits to S3 (incremental, only new commits uploaded)
-  - `pull` – fetch commits from S3 (incremental, only new commits downloaded)
-
-- **Remote Storage**
-  - AWS S3 acts as the **remote origin** (like GitHub).
-  - Efficient **incremental sync** for commits.
-
-- **Server (future integration)**
-  - REST APIs and Socket.IO backend (Express + MongoDB).
-  - Planned for users, repos, issues, notifications.
-
----
-
-## 🛠️ Tech Stack
-- **CLI**: Node.js, Yargs, FS, UUID, AWS SDK v3
-- **Server**: Express.js, MongoDB (Mongoose), Socket.IO
-- **Cloud Storage**: AWS S3
-
----
-
-## 📂 Repository Structure
-```
-
-backend/
-├── cli.js                 # CLI entrypoint
-├── cli/
-│   ├── commands/          # CLI commands
-│   │   ├── init.js
-│   │   ├── add.js
-│   │   ├── commit.js
-│   │   ├── log.js
-│   │   ├── revert.js
-│   │   ├── push.js
-│   │   └── pull.js
-│   └── constants.js       # Repo path constants
-├── config/
-│   ├── aws-config.js      # AWS S3 client (SDK v3)
-│   ├── db.js              # MongoDB connection
-│   └── socket.js          # Socket.IO setup
-├── routes/
-├── controllers/
-└── server.js              # Express server entrypoint
-
-````
+## 🚀 Features
+- **Repository Initialization**
+  - `init` – initialize a new BitBranch repository.
+- **Staging & Committing**
+  - `add <file>` – stage a file.
+  - `commit [message]` – create a snapshot with parent tracking.
+    - If no message is provided, BitBranch can auto-suggest one using **Google Gemini AI** 🎉.
+- **Status & Diff**
+  - `status` – see staged, unstaged, untracked files (respects `.bitbranchignore`).
+  - `diff` – view changes between working directory and last commit.
+- **Branching & Checkout**
+  - `branch <name>` – create a new branch at current commit.
+  - `branch` – list branches (`*` marks the current branch, `(HEAD detached …)` shown if detached).
+  - `checkout <branch>` – switch to an existing branch.
+  - `checkout <commit>` – enter **detached HEAD** mode at a specific commit.
+- **Logging**
+  - `log` – show full commit history with branch/detached info.
+  - `log --oneline` – short form history.
+- **Revert**
+  - `revert <commitID>` – restore repository state to a specific commit.
+- **Remote Sync**
+  - `push` – push commits to S3 storage.
+  - `pull` – fetch commits from S3 storage.
 
 ---
 
-## ⚡ Setup Instructions
-
-### 1. Clone the Repository
+## 📦 Installation
+Clone the repo and install dependencies:
 ```bash
-git clone https://github.com/your-username/bitbranch.git
+git clone https://github.com/yourusername/bitbranch.git
 cd bitbranch/backend
-````
-
-### 2. Install Dependencies
-
-```bash
 npm install
-```
-
-### 3. Configure Environment
-
-Create a `.env` file:
-
-```ini
-AWS_ACCESS_KEY_ID=your-access-key
-AWS_SECRET_ACCESS_KEY=your-secret-key
-AWS_REGION=ap-south-1      # Example: Mumbai
-S3_BUCKET=your-bucket-name
-MONGODB_URI=mongodb://localhost:27017/bitbranch
-PORT=3000
-CLIENT_URL=http://localhost:5173
-```
+````
 
 ---
 
-## 🚀 Usage (CLI)
+## ⚡ Usage
 
-### Initialize Repository
+### Initialize a repo
 
 ```bash
 node cli.js init
 ```
 
-### Add File
+### Add & Commit (Manual message)
 
 ```bash
-echo "hello" > a.txt
-node cli.js add a.txt
-```
-
-### Commit
-
-```bash
+echo "hello world" > file.txt
+node cli.js add file.txt
 node cli.js commit "first commit"
 ```
 
-### View Log
+### Commit with AI-suggested message
+
+```bash
+node cli.js commit
+```
+
+Example flow:
+
+```
+🤖 Suggested commit message: "Add feature.js with console log statement"
+Use this? (y/n): y
+✅ Commit 123e4567 created with message: "Add feature.js with console log statement"
+```
+
+> Requires `GEMINI_API_KEY` in `.env`.
+
+---
+
+### Branching
+
+```bash
+node cli.js branch dev     # create branch dev
+node cli.js checkout dev   # switch to dev
+```
+
+### Detached HEAD
+
+```bash
+node cli.js log --oneline
+# Suppose you see commit abc1234
+node cli.js checkout abc1234
+# Now HEAD is detached at abc1234
+```
+
+### Logs
 
 ```bash
 node cli.js log
-node cli.js log --oneline
 ```
 
-### Revert
+Output:
 
-```bash
-node cli.js revert <commitID>
 ```
+=== BitBranch Log (branch: dev) ===
+commit 3268510f-ab27-4e04-aacc-e65178dc31c8
+Date:   2025-08-16T15:21:19.423Z
 
-### Push to Remote (S3)
+    dev branch commit
 
-```bash
-node cli.js push
-```
+commit fc17fcf0-c98b-4385-b60d-faa2572eb9c5
+Date:   2025-08-16T15:17:20.530Z
 
-### Pull from Remote (S3)
-
-```bash
-node cli.js pull
+    first commit
 ```
 
 ---
 
-## 🧪 Test Workflow
+## 🛡️ Notes
 
-1. `node cli.js init`
-2. Create a file → `node cli.js add file.txt`
-3. `node cli.js commit "my commit"`
-4. `node cli.js log` (check history)
-5. `node cli.js push` (upload to S3)
-6. Delete `.bitbranch/commits/` → `node cli.js pull` (restore from S3)
-7. `node cli.js revert <commitID>` (roll back HEAD + files)
+* Commits in **detached HEAD** are valid but **not attached to a branch**.
+* `.bitbranchignore` file can be used to exclude files/folders from staging & status.
+* Push/Pull uses AWS S3 as remote backend (requires credentials in `.env`).
+* AI commit messages require a valid **Google Gemini API key**.
 
 ---
 
-## 📌 Next Milestones
+## 🔮 Roadmap
 
-* [ ] Add **branches** (`branch`, `checkout`)
-* [ ] Add **status & diff** commands
-* [ ] Extend **server APIs** (repos, issues, PRs)
-* [ ] Real-time notifications with **Socket.IO**
+* [ ] Merge support (fast-forward + 3-way merge)
+* [ ] Branch-aware push/pull
+* [ ] Conflict resolution
+* [ ] Hooks (pre-commit, post-commit)
+* [ ] `--ai` flag for auto-accept AI commit messages (no prompt)
 
 ---
 
 ## 👨‍💻 Author
 
-**Aanshu Tanwar** – Full-stack developer | BitBranch creator
+Built by **Aanshu Tanwar** as a mini Git + GitHub–like system for learning and backend practice.

@@ -1,4 +1,3 @@
-// cli/constants.js
 const path = require("path");
 
 const REPO_DIR = path.resolve(process.cwd(), ".bitbranch");
