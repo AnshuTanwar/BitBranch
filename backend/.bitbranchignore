@@ -1,0 +1,17 @@
+# Ignore backend system files
+node_modules
+config
+controllers
+routes
+models
+middleware
+server.js
+cli.js
+
+# Ignore logs
+*.log
+cli
+commit.json
+hello.txt 18-03-13-655.txt
+package.json
+package-lock.json
