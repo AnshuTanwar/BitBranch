@@ -25,8 +25,15 @@ yargs(hideBin(process.argv))
     .command(
         "commit [message]",
         "Commit staged files",
-        y => y.positional("message", { type: "string", describe: "Commit message" }),
-        argv => commitRepo(argv.message)
+        y => y
+            .positional("message", { type: "string", describe: "Commit message" })
+            .option("ai", {
+                alias: "a",
+                type: "boolean",
+                default: false,
+                describe: "Automatically accept AI-suggested commit message",
+            }),
+        argv => commitRepo(argv.message, { ai: argv.ai })
     )
     .command("push", "Push commits to S3", {}, pushRepo)
     .command("pull", "Pull commits from S3", {}, pullRepo)
@@ -52,8 +59,8 @@ yargs(hideBin(process.argv))
     )
     .command(
         "checkout <name>",
-        "Switch to a branch",
-        y => y.positional("name", { type: "string", describe: "Branch name" }),
+        "Switch to a branch or commit",
+        y => y.positional("name", { type: "string", describe: "Branch name or commit ID" }),
         argv => checkoutRepo(argv.name)
     )
     .demandCommand(1)

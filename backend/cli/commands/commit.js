@@ -5,6 +5,7 @@ const { v4: uuidv4 } = require("uuid");
 const readline = require("readline");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { STAGING_DIR, COMMITS_DIR, HEAD_FILE, REPO_DIR } = require("../constants");
+const { analyzeCode } = require("./quality");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -24,35 +25,61 @@ async function promptUser(question) {
 async function generateGeminiCommitMessage(stagedFiles) {
     try {
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const prompt = `Generate a short, professional Git commit message for these staged files: ${stagedFiles.join(", ")}`;
+        const prompt = `Generate a short, professional Git commit message for these staged files: ${stagedFiles.join(", ")}.
+Respond with ONLY the commit message (single line).`;
         const result = await model.generateContent(prompt);
-        return result.response.text().trim();
+
+        let message = result.response.text().trim();
+        if (message.includes("\n")) {
+            message = message.split("\n")[0].trim();
+        }
+        return message;
     } catch (err) {
         console.error("Gemini commit message generation failed:", err.message);
-        return "Update files";
+        return "update files";
     }
 }
 
-async function commitRepo(message) {
+async function commitRepo(message, { ai = false } = {}) {
     try {
         const stagedFiles = await fs.readdir(STAGING_DIR);
         if (stagedFiles.length === 0) {
-            console.log(" Nothing to commit.");
+            console.log("⚠️ Nothing to commit.");
             return;
         }
 
-        // If no commit message → ask Gemini
+        // If no commit message → use Gemini
         if (!message) {
             const aiMsg = await generateGeminiCommitMessage(stagedFiles);
-            const answer = await promptUser(`Suggested commit message: "${aiMsg}"\nUse this? (y/n): `);
-            if (answer.toLowerCase() === "y") {
+            if (ai) {
                 message = aiMsg;
+                console.log(` Auto-commit with AI message: "${message}"`);
             } else {
-                message = await promptUser("Enter your commit message: ");
+                const answer = await promptUser(` Suggested commit message: "${aiMsg}"\nUse this? (y/n): `);
+                if (answer.toLowerCase() === "y") {
+                    message = aiMsg;
+                } else {
+                    message = await promptUser("Enter your commit message: ");
+                }
             }
         }
 
-        // Get parent commit (HEAD may be branch ref or commit ID)
+        // ✅ Run quality check before committing
+        const stagedPaths = stagedFiles.map(f => path.join(STAGING_DIR, f));
+        const report = await analyzeCode(stagedPaths);
+
+        console.log("\n Code Quality Report:");
+        console.log(`- Errors: ${report.totalErrors}`);
+        console.log(`- Warnings: ${report.totalWarnings}`);
+        console.log(`- Score: ${report.score}/100`);
+        if (report.issues.length > 0) {
+            console.log("\n⚠️ Issues (showing first 5):");
+            for (const issue of report.issues.slice(0, 5)) {
+                console.log(`  - ${issue.file}:${issue.line} [${issue.severity}] ${issue.message}`);
+            }
+        }
+
+        // Get parent commit
         let parent = "";
         try {
             const headContent = (await fs.readFile(HEAD_FILE, "utf8")).trim();
@@ -80,6 +107,7 @@ async function commitRepo(message) {
             message,
             timestamp: new Date().toISOString(),
             parent,
+            quality: report, // save score with commit
         };
         await fs.writeFile(path.join(commitDir, "commit.json"), JSON.stringify(commitData, null, 2));
 
@@ -88,21 +116,20 @@ async function commitRepo(message) {
             await fs.unlink(path.join(STAGING_DIR, file));
         }
 
-        // Update HEAD + branch ref (handle detached HEAD)
+        // Update HEAD
         let headContent = await fs.readFile(HEAD_FILE, "utf8").catch(() => "");
         if (headContent.startsWith("ref:")) {
             const branchRef = headContent.split("ref:")[1].trim();
             await fs.writeFile(path.join(REPO_DIR, branchRef), commitID);
             await fs.writeFile(HEAD_FILE, `ref: ${branchRef}`);
         } else {
-            // Detached HEAD → commit is not on any branch
             await fs.writeFile(HEAD_FILE, commitID);
-            console.log("Commit made in detached HEAD state (not on any branch)");
+            console.log("⚠️ Commit made in detached HEAD state (not on any branch)");
         }
 
-        console.log(`Commit ${commitID} created with message: "${message}"`);
+        console.log(`\n Commit ${commitID} created with message: "${message}"`);
     } catch (err) {
-        console.error("Error committing files:", err);
+        console.error(" Error committing files:", err);
     }
 }
 
