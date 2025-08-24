@@ -1,16 +1,17 @@
-const express = require('express');
-const userRouter = require('./user.router.js');
-const repoRouter = require('./repo.router.js');
-const issueRouter = require('./issue.router.js');
+const express = require("express");
+const userController = require("../controllers/userController.js");
+const authMiddleware = require("../middleware/auth.js");
 
-const mainRouter = express.Router();
+const userRouter = express.Router();
 
-mainRouter.use(userRouter);
-mainRouter.use(repoRouter);
-mainRouter.use(issueRouter);
+// Public Routes
+userRouter.post("/signup", userController.signup);
+userRouter.post("/login", userController.login);
 
-mainRouter.get("/", (req, res) => {
-    res.send("Welcome");
-});
+// Protected Routes
+userRouter.get("/", authMiddleware, userController.getAllUsers);
+userRouter.get("/:id", authMiddleware, userController.getUserProfile);
+userRouter.put("/:id", authMiddleware, userController.updateUserProfile);
+userRouter.delete("/:id", authMiddleware, userController.deleteUserProfile);
 
-module.exports = mainRouter;
+module.exports = userRouter;
