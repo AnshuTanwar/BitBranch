@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const dotenv = require("dotenv");
 const User = require("../models/userModel.js");
+const { generateToken } = require("../middleware/auth.js");
 
 dotenv.config();
 
@@ -44,11 +45,7 @@ async function signup(req, res) {
 
         const result = await newUser.save();
 
-        const token = jwt.sign(
-            { id: result._id },
-            process.env.JWT_SECRET_KEY,
-            { expiresIn: "1h" }
-        );
+        const token = generateToken(result._id);
 
         res.json({ token, userId: result._id });
     } catch (err) {
@@ -75,11 +72,7 @@ async function login(req, res) {
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
-        const token = jwt.sign(
-            { id: user._id },
-            process.env.JWT_SECRET_KEY,
-            { expiresIn: "1h" }
-        );
+        const token = generateToken(result._id);
 
         res.json({ token, userId: user._id });
     } catch (err) {

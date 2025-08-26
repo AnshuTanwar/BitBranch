@@ -9,7 +9,7 @@ function authMiddleware(req, res, next) {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-        req.user = decoded.id;
+        req.user = decoded.id; // 🔑 userId attach
         next();
     } catch (err) {
         console.error("Invalid Token:", err.message);
@@ -17,4 +17,11 @@ function authMiddleware(req, res, next) {
     }
 }
 
-module.exports = authMiddleware;
+function generateToken(id) {
+    return jwt.sign({ id }, process.env.JWT_SECRET_KEY, { expiresIn: "1h" });
+}
+
+module.exports = {
+    authMiddleware,
+    generateToken,
+};

@@ -10,7 +10,7 @@ dotenv.config();
 
 async function startServer() {
     const app = express();
-    const port = process.env.PORT || 3000;
+    const port = process.env.PORT || 5050;
     const mongoURI = process.env.MONGODB_URI;
 
     // Middlewares
@@ -21,14 +21,14 @@ async function startServer() {
     await connectDB(mongoURI);
 
     // Routes
-    app.use("/", mainRouter);
+    app.use("/api", mainRouter);
 
     // HTTP + Socket.IO
     const httpServer = http.createServer(app);
     initSocket(httpServer);
 
     httpServer.listen(port, () => {
-        console.log(`🚀 Server running on PORT ${port}`);
+        console.log(`Server running on PORT ${port}`);
     });
 }
 

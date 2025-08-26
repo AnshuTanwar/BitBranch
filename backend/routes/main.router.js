@@ -1,17 +1,17 @@
 const express = require("express");
-const userController = require("../controllers/userController.js");
-const authMiddleware = require("../middleware/auth.js");
+const userRouter = require("./user.router.js");
+const repoRouter = require("./repo.router.js");
+const issueRouter = require("./issue.router.js");
 
-const userRouter = express.Router();
+const mainRouter = express.Router();
 
-// Public Routes
-userRouter.post("/signup", userController.signup);
-userRouter.post("/login", userController.login);
+mainRouter.get("/health", (req, res) => {
+    res.send("API is working!");
+});
 
-// Protected Routes
-userRouter.get("/", authMiddleware, userController.getAllUsers);
-userRouter.get("/:id", authMiddleware, userController.getUserProfile);
-userRouter.put("/:id", authMiddleware, userController.updateUserProfile);
-userRouter.delete("/:id", authMiddleware, userController.deleteUserProfile);
+// Mount all routers with prefixes
+mainRouter.use("/users", userRouter);
+mainRouter.use("/repos", repoRouter);
+mainRouter.use("/issues", issueRouter);
 
-module.exports = userRouter;
+module.exports = mainRouter;

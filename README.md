@@ -5,12 +5,12 @@ BitBranch mimics core Git workflows: init, add, commit, branch, checkout, log, p
 
 ✨ **Special Sauce**:
 
-* 🤖 **AI-powered Commit Messages** (Google Gemini integration)
-* 🧪 **Real-time Code Quality Scores** (auto linting + scoring every commit)
+*  **AI-powered Commit Messages** (Google Gemini integration)
+*  **Real-time Code Quality Scores** (auto linting + scoring every commit)
 
 ---
 
-## 🚀 Features
+##  Features
 
 * **Repository Initialization**
 
@@ -37,7 +37,7 @@ BitBranch mimics core Git workflows: init, add, commit, branch, checkout, log, p
     - Errors: 1
     - Warnings: 1
     - Score: 93/100
-    ⚠️ Issues:
+     Issues:
       - bad.js:1 [warning] 'a' is assigned a value but never used.
       - bad.js:1 [error] Missing semicolon.
     ```
@@ -65,7 +65,7 @@ BitBranch mimics core Git workflows: init, add, commit, branch, checkout, log, p
 
 ---
 
-## 📦 Installation
+##  Installation
 
 Clone the repo and install dependencies:
 
