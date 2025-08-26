@@ -1,12 +1,16 @@
 const express = require('express');
 const issueController = require('../controllers/issueController.js');
+const { authMiddleware } = require('../middleware/auth.js');
 
 const issueRouter = express.Router();
 
-issueRouter.post('/issue/create', issueController.createIssue);
-issueRouter.put('/issue/update/:id', issueController.updateIssueById);
-issueRouter.get('/issue/delete/:id', issueController.deleteIssueById);
-issueRouter.get('/issue/all', issueController.getAllIssues);
-issueRouter.get('/issue/:id', issueController.getIssueById);
+// Protected
+issueRouter.post('/create/:repoId', authMiddleware, issueController.createIssue);
+issueRouter.put('/update/:id', authMiddleware, issueController.updateIssueById);
+issueRouter.delete('/delete/:id', authMiddleware, issueController.deleteIssueById);
+
+// Public
+issueRouter.get('/repo/:repoId', issueController.getAllIssues);
+issueRouter.get('/:id', issueController.getIssueById);
 
 module.exports = issueRouter;

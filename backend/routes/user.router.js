@@ -1,16 +1,16 @@
 const express = require("express");
 const userController = require("../controllers/userController.js");
-
+const { authMiddleware } = require("../middleware/auth.js");
 const userRouter = express.Router();
 
-// Auth
+// Public Routes
 userRouter.post("/signup", userController.signup);
 userRouter.post("/login", userController.login);
 
-// Users
-userRouter.get("/", userController.getAllUsers); // GET /users
-userRouter.get("/:id", userController.getUserProfile); // GET /users/:id
-userRouter.put("/:id", userController.updateUserProfile); // PUT /users/:id
-userRouter.delete("/:id", userController.deleteUserProfile); // DELETE /users/:id
+// Protected Routes
+userRouter.get("/", authMiddleware, userController.getAllUsers);
+userRouter.get("/:id", authMiddleware, userController.getUserProfile);
+userRouter.put("/:id", authMiddleware, userController.updateUserProfile);
+userRouter.delete("/:id", authMiddleware, userController.deleteUserProfile);
 
 module.exports = userRouter;

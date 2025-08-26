@@ -10,7 +10,7 @@ function initSocket(httpServer) {
     });
 
     io.on("connection", (socket) => {
-        console.log("⚡ User connected:", socket.id);
+        console.log("User connected:", socket.id);
 
         socket.on("joinRoom", (userID) => {
             console.log(`User ${userID} joined room`);

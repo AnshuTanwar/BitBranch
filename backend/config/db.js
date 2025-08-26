@@ -6,10 +6,10 @@ async function connectDB(mongoURI) {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         });
-        console.log("✅ MongoDB connected");
+        console.log("MongoDB connected");
     } catch (err) {
-        console.error("❌ MongoDB connection error:", err);
-        process.exit(1); // Exit if DB fails to connect
+        console.error("MongoDB connection error:", err);
+        process.exit(1);
     }
 
     // Error handling
@@ -20,7 +20,7 @@ async function connectDB(mongoURI) {
    // Graceful shutdown
     process.on("SIGINT", async () => {
         await mongoose.connection.close();
-        console.log("🔌 MongoDB disconnected on app termination");
+        console.log("MongoDB disconnected on app termination");
         process.exit(0);
     });
 }
