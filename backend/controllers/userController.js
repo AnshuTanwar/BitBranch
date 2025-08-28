@@ -1,8 +1,9 @@
-const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const dotenv = require("dotenv");
 const User = require("../models/userModel.js");
 const { generateToken } = require("../middleware/auth.js");
+const asyncHandler = require("../utils/asyncHandler");
+const AppError = require("../utils/AppError");
 
 dotenv.config();
 
@@ -10,15 +11,10 @@ dotenv.config();
  * @desc   Get all users
  * @route  GET /users
  */
-async function getAllUsers(req, res) {
-    try {
-        const users = await User.find().select("-password"); // hide password
-        res.json(users);
-    } catch (err) {
-        console.error("Error getting users: ", err.message);
-        res.status(500).send("Server error");
-    }
-}
+const getAllUsers = asyncHandler(async (req, res) => {
+    const users = await User.find().select("-password");
+    res.json(users);
+});
 
 /**
  * @desc   User signup

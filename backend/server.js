@@ -5,6 +5,7 @@ const http = require("http");
 const mainRouter = require("./routes/main.router.js");
 const connectDB = require("./config/db.js");
 const initSocket = require("./config/socket.js");
+const { notFound, errorHandler } = require("./mcciddleware/error.js");
 
 dotenv.config();
 
@@ -22,6 +23,10 @@ async function startServer() {
 
     // Routes
     app.use("/api", mainRouter);
+
+    // Error middleware
+    app.use(notFound);
+    app.use(errorHandler);
 
     // HTTP + Socket.IO
     const httpServer = http.createServer(app);
