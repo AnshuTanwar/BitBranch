@@ -1,207 +1,357 @@
 # BitBranch
 
-A lightweight Git + GitHub–like backend CLI built with Node.js.
+A lightweight Git + GitHub–like backend + CLI built with Node.js + MongoDB.
 BitBranch mimics core Git workflows: init, add, commit, branch, checkout, log, push/pull, and more.
-
-✨ **Special Sauce**:
-
-*  **AI-powered Commit Messages** (Google Gemini integration)
-*  **Real-time Code Quality Scores** (auto linting + scoring every commit)
+It also provides a **REST API** for authentication, repositories, issues, and real-time events.
 
 ---
 
-##  Features
+## Features (Backend)
 
-* **Repository Initialization**
-
-  * `init` – initialize a new BitBranch repository.
-* **Staging & Committing**
-
-  * `add <file>` – stage a file.
-  * `commit [message]` – create a snapshot with parent tracking.
-
-    * If no message is provided, BitBranch can auto-suggest one using **Google Gemini AI** 🎉.
-    * Use `--ai` to auto-accept the AI-generated commit message (no confirmation needed).
-* **AI-Powered Commits**
-
-  * Gemini suggests **short, professional commit messages**.
-  * Works interactively or fully automatic (`--ai`).
-* **Real-time Code Quality Score**
-
-  * Each commit triggers linting of staged files using **ESLint**.
-  * Shows **errors, warnings, maintainability score (/100)**.
-  * Example:
-
-    ```
-    Code Quality Report:
-    - Errors: 1
-    - Warnings: 1
-    - Score: 93/100
-     Issues:
-      - bad.js:1 [warning] 'a' is assigned a value but never used.
-      - bad.js:1 [error] Missing semicolon.
-    ```
-* **Status & Diff**
-
-  * `status` – see staged, unstaged, untracked files (respects `.bitbranchignore`).
-  * `diff` – view changes between working directory and last commit.
-* **Branching & Checkout**
-
-  * `branch <name>` – create a new branch at current commit.
-  * `branch` – list branches (`*` marks the current branch, `(HEAD detached …)` shown if detached).
-  * `checkout <branch>` – switch to an existing branch.
-  * `checkout <commit>` – enter **detached HEAD** mode at a specific commit.
-* **Logging**
-
-  * `log` – show full commit history with branch/detached info.
-  * `log --oneline` – short form history.
-* **Revert**
-
-  * `revert <commitID>` – restore repository state to a specific commit.
-* **Remote Sync**
-
-  * `push` – push commits to S3 storage.
-  * `pull` – fetch commits from S3 storage.
+* **User Authentication** – JWT-based login/signup.
+* **Repository Management** – Create, update, delete repos with visibility toggle.
+* **Issue Tracking** – Per-repository issues with CRUD.
+* **Real-time Events** – WebSockets (Socket.IO) for notifications.
+* **AI Commit Messages** – via Google Gemini.
+* **Code Quality Scoring** – ESLint integration.
 
 ---
 
-##  Installation
+## ⚡ API Reference
 
-Clone the repo and install dependencies:
+### Authentication
 
-```bash
-git clone https://github.com/yourusername/bitbranch.git
-cd bitbranch/backend
-npm install
+#### **Signup**
+
+`POST /users/signup`
+
+**Body:**
+
+```json
+{
+  "username": "john_doe",
+  "email": "john@example.com",
+  "password": "securePass123"
+}
 ```
 
-Create a `.env` file for configuration:
+**Response:**
 
-```env
-AWS_ACCESS_KEY_ID=your-key
-AWS_SECRET_ACCESS_KEY=your-secret
-AWS_REGION=your-region
-S3_BUCKET=your-bucket
-GEMINI_API_KEY=your-gemini-key
+```json
+{
+  "token": "jwt_token_here",
+  "userId": "64fa2c...."
+}
 ```
 
 ---
 
-## ⚡ Usage
+#### **Login**
 
-### Initialize a repo
+`POST /users/login`
 
-```bash
-node cli.js init
+**Body:**
+
+```json
+{
+  "email": "john@example.com",
+  "password": "securePass123"
+}
 ```
 
-### Add & Commit (Manual message)
+**Response:**
 
-```bash
-echo "hello world" > file.txt
-node cli.js add file.txt
-node cli.js commit "first commit"
-```
-
-### Commit with AI-suggested message (interactive)
-
-```bash
-node cli.js commit
-```
-
-Example flow:
-
-```
-🤖 Suggested commit message: "Add feature.js with console log statement"
-Use this? (y/n): y
-Commit 123e4567 created with message: "Add feature.js with console log statement"
-```
-
-### Commit with AI-suggested message (auto-accept)
-
-```bash
-node cli.js commit --ai
-```
-
-Example:
-
-```
-Auto-commit with AI message: "feat: add ai-auto.js"
-Commit 456def89 created with message: "feat: add ai-auto.js"
+```json
+{
+  "token": "jwt_token_here",
+  "userId": "64fa2c...."
+}
 ```
 
 ---
 
-### Quality Score on Commit
+### Users
 
-Every commit automatically runs lint checks on staged files:
+#### **Get All Users**
 
-```bash
-node cli.js commit "test quality"
-```
+`GET /users/`
+Headers: `Authorization: Bearer <token>`
 
-Output:
+**Response:**
 
-```
-Code Quality Report:
-- Errors: 1
-- Warnings: 1
-- Score: 93/100
-
- Issues:
-  - bad.js:1 [warning] 'a' is assigned a value but never used.
-  - bad.js:1 [error] Missing semicolon.
-
-Commit abc123 created with message: "test quality"
+```json
+[
+  {
+    "_id": "64fa2c....",
+    "username": "john_doe",
+    "email": "john@example.com"
+  }
+]
 ```
 
 ---
 
-### Branching
+#### **Get User Profile**
 
-```bash
-node cli.js branch dev     # create branch dev
-node cli.js checkout dev   # switch to dev
-```
+`GET /users/:id`
+Protected
 
-### Detached HEAD
+**Response:**
 
-```bash
-node cli.js log --oneline
-# Suppose you see commit abc1234
-node cli.js checkout abc1234
-# Now HEAD is detached at abc1234
-```
-
-### Logs
-
-```bash
-node cli.js log
+```json
+{
+  "_id": "64fa2c...",
+  "username": "john_doe",
+  "email": "john@example.com"
+}
 ```
 
 ---
 
-## Notes
+#### **Update Profile**
 
-* Commits in **detached HEAD** are valid but **not attached to a branch**.
-* `.bitbranchignore` file can be used to exclude files/folders from staging & status.
-* Push/Pull uses AWS S3 as remote backend (requires credentials in `.env`).
-* AI commit messages require a valid **Google Gemini API key**.
-* Code quality scores require **ESLint** (auto-installed via `npm install`).
+`PUT /users/:id`
+Protected
+
+**Body:**
+
+```json
+{
+  "email": "new@example.com",
+  "password": "newPass"
+}
+```
 
 ---
 
-## Roadmap
+#### **Delete Profile**
 
-* [ ] Merge support (fast-forward + 3-way merge)
-* [ ] Branch-aware push/pull
-* [ ] Conflict resolution
-* [ ] Hooks (pre-commit, post-commit)
-* [ ] Configurable **Quality Threshold** (block commit if score < 80)
-* [ ] AI commit message templates (Conventional Commits, Angular style)
+`DELETE /users/:id`
+Protected
+
+**Response:**
+
+```json
+{
+  "message": "User Profile Deleted"
+}
+```
+
+---
+
+### Repositories
+
+#### **Create Repository**
+
+`POST /repos/create`
+Protected
+
+**Body:**
+
+```json
+{
+  "name": "bitbranch-demo",
+  "description": "my test repo",
+  "visibility": true,
+  "content": []
+}
+```
+
+**Response:**
+
+```json
+{
+  "message": "Repository Created!",
+  "repositoryID": "6501f2c..."
+}
+```
+
+---
+
+#### **Get All Repositories**
+
+`GET /repos/all`
+
+Returns all repos with populated owner + issues.
+
+---
+
+#### **Get Repository by ID**
+
+`GET /repos/:id`
+
+---
+
+#### **Get Repository by Name**
+
+`GET /repos/name/:name`
+
+---
+
+#### **Get My Repositories**
+
+`GET /repos/user/me`
+Protected
+
+---
+
+#### **Update Repository**
+
+`PUT /repos/update/:id`
+Protected
+
+**Body:**
+
+```json
+{
+  "description": "updated repo desc",
+  "content": "new file content"
+}
+```
+
+---
+
+#### **Toggle Visibility**
+
+`PATCH /repos/toggle/:id`
+Protected
+
+Toggles between public/private.
+
+---
+
+#### **Delete Repository**
+
+`DELETE /repos/delete/:id`
+Protected
+
+---
+
+### Issues
+
+#### **Create Issue**
+
+`POST /issues/create/:repoId`
+Protected
+
+**Body:**
+
+```json
+{
+  "title": "Bug in login",
+  "description": "Login fails with 500"
+}
+```
+
+**Response:**
+
+```json
+{
+  "_id": "6502a1...",
+  "title": "Bug in login",
+  "repository": "6501f2c..."
+}
+```
+
+---
+
+#### **Update Issue**
+
+`PUT /issues/update/:id`
+Protected
+
+**Body:**
+
+```json
+{
+  "title": "Bug fixed",
+  "description": "fixed in commit abc",
+  "status": "closed"
+}
+```
+
+---
+
+#### **Delete Issue**
+
+`DELETE /issues/delete/:id`
+Protected
+
+---
+
+#### **Get Issues by Repo**
+
+`GET /issues/repo/:repoId`
+
+---
+
+#### **Get Issue by ID**
+
+`GET /issues/:id`
+
+---
+
+### Real-time (Socket.IO)
+
+* `joinRoom(userId)` – join personal room for notifications.
+* Auto logs connection/disconnection.
+* Future scope: push repo/issue updates to relevant users.
+
+---
+
+## 🛠 Tech Stack
+
+* **Backend**: Node.js, Express, MongoDB (Mongoose)
+* **Auth**: JWT
+* **Real-time**: Socket.IO
+* **AI**: Google Gemini API
+* **Linting/Score**: ESLint
+* **Remote Sync**: AWS S3
+
+---
+
+## 📂 Project Structure
+
+```
+backend/
+│── controllers/      # business logic
+│── models/           # mongoose schemas
+│── routes/           # user, repo, issue routers
+│── middleware/       # auth, error handling
+│── config/           # db, socket
+│── utils/            # helpers
+│── server.js         # entrypoint
+```
+
+---
+
+## ⚡ Usage (API + CLI)
+
+* Run server:
+
+  ```bash
+  npm run dev
+  ```
+* Use CLI (init/add/commit):
+
+  ```bash
+  node cli.js init
+  node cli.js commit --ai
+  ```
+
+---
+
+## Next Steps
+
+* Centralized error handling (AppError + global middleware).
+* Request validation (express-validator / zod).
+* Testing (Jest + Supertest).
+* Logging (Winston/Pino).
+* Deployment (Docker + CI/CD).
 
 ---
 
 ## Author
 
-Built by **Aanshu Tanwar** as a mini Git + GitHub–like system for learning and backend practice.
+Built with ❤️ by **Aanshu Tanwar**
+Frontend Collaborator **Deepak**
