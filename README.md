@@ -191,15 +191,6 @@ node cli.js log
 
 ---
 
-## Roadmap
-
-* [ ] Merge support (fast-forward + 3-way merge)
-* [ ] Branch-aware push/pull
-* [ ] Conflict resolution
-* [ ] Hooks (pre-commit, post-commit)
-* [ ] Configurable **Quality Threshold** (block commit if score < 80)
-* [ ] AI commit message templates (Conventional Commits, Angular style)
-
 ---
 
 ## Author
