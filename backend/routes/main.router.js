@@ -9,7 +9,6 @@ mainRouter.get("/health", (req, res) => {
     res.send("API is working!");
 });
 
-// Mount all routers with prefixes
 mainRouter.use("/users", userRouter);
 mainRouter.use("/repos", repoRouter);
 mainRouter.use("/issues", issueRouter);

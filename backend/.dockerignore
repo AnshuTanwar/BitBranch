@@ -1,0 +1,22 @@
+# Node modules
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Env files
+.env
+
+# Logs
+*.log
+
+# Temporary files
+tmp
+dist
+build
+
+# Git
+.git
+.gitignore
+
+# System files
+.DS_Store
