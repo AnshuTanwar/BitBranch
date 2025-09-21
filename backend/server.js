@@ -5,7 +5,7 @@ const http = require("http");
 const mainRouter = require("./routes/main.router.js");
 const connectDB = require("./config/db.js");
 const initSocket = require("./config/socket.js");
-const { notFound, errorHandler } = require("./mcciddleware/error.js");
+const { notFound, errorHandler } = require("./middleware/error.js");
 
 dotenv.config();
 

@@ -20,133 +20,88 @@ const getAllUsers = asyncHandler(async (req, res) => {
  * @desc   User signup
  * @route  POST /auth/signup
  */
-async function signup(req, res) {
+const signup = asyncHandler(async (req, res) => {
     const { username, password, email } = req.body;
-    try {
-        // Check existing user
-        const userExists = await User.findOne({ $or: [{ username }, { email }] });
-        if (userExists) {
-            return res.status(400).json({ message: "User already exists" });
-        }
 
-        // Hash password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+    // Check existing user
+    const userExists = await User.findOne({ $or: [{ username }, { email }] });
+    if (userExists) throw new AppError("User already exists", 400);
 
-        const newUser = new User({
-            username,
-            email,
-            password: hashedPassword,
-        });
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-        const result = await newUser.save();
+    const newUser = await User.create({
+        username,
+        email,
+        password: hashedPassword,
+    });
 
-        const token = generateToken(result._id);
+    const token = generateToken(newUser._id);
 
-        res.json({ token, userId: result._id });
-    } catch (err) {
-        console.error("Error during signup: ", err.message);
-        res.status(500).send("Server error");
-    }
-}
+    res.status(201).json({ token, userId: newUser._id });
+});
 
 /**
  * @desc   User login
  * @route  POST /auth/login
  */
-async function login(req, res) {
+const login = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
-    try {
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(400).json({ message: "User not found" });
-        }
+    const user = await User.findOne({ email });
+    if (!user) throw new AppError("User not found", 400);
 
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: "Invalid credentials" });
-        }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) throw new AppError("Invalid credentials", 400);
 
-        const token = generateToken(result._id);
+    const token = generateToken(user._id);
 
-        res.json({ token, userId: user._id });
-    } catch (err) {
-        console.error("Error during login: ", err.message);
-        res.status(500).send("Server error");
-    }
-}
+    res.json({ token, userId: user._id });
+});
 
 /**
  * @desc   Get user profile
  * @route  GET /users/:id
  */
-async function getUserProfile(req, res) {
+const getUserProfile = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    try {
-        const user = await User.findById(id).select("-password");
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-        res.json(user);
-    } catch (err) {
-        console.error("Error fetching profile: ", err.message);
-        res.status(500).send("Server error");
-    }
-}
+    const user = await User.findById(id).select("-password");
+    if (!user) throw new AppError("User not found", 404);
+    res.json(user);
+});
 
 /**
  * @desc   Update user profile
  * @route  PUT /users/:id
  */
-async function updateUserProfile(req, res) {
+const updateUserProfile = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { email, password } = req.body;
 
-    try {
-        const updateFields = {};
-        if (email) updateFields.email = email;
-        if (password) {
-            const salt = await bcrypt.genSalt(10);
-            updateFields.password = await bcrypt.hash(password, salt);
-        }
+    const updateFields = {};
+    if (email) updateFields.email = email;
+    if (password) updateFields.password = await bcrypt.hash(password, 10);
 
-        const updatedUser = await User.findByIdAndUpdate(
-            id,
-            { $set: updateFields },
-            { new: true }
-        ).select("-password");
+    const updatedUser = await User.findByIdAndUpdate(
+        id,
+        { $set: updateFields },
+        { new: true }
+    ).select("-password");
 
-        if (!updatedUser) {
-            return res.status(404).json({ message: "User not found" });
-        }
+    if (!updatedUser) throw new AppError("User not found", 404);
 
-        res.json(updatedUser);
-    } catch (err) {
-        console.error("Error updating profile: ", err.message);
-        res.status(500).send("Server error");
-    }
-}
+    res.json(updatedUser);
+});
 
 /**
  * @desc   Delete user profile
  * @route  DELETE /users/:id
  */
-async function deleteUserProfile(req, res) {
+const deleteUserProfile = asyncHandler(async (req, res) => {
     const { id } = req.params;
-
-    try {
-        const deleted = await User.findByIdAndDelete(id);
-        if (!deleted) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        res.json({ message: "User Profile Deleted" });
-    } catch (err) {
-        console.error("Error deleting profile: ", err.message);
-        res.status(500).send("Server error");
-    }
-}
+    const deleted = await User.findByIdAndDelete(id);
+    if (!deleted) throw new AppError("User not found", 404);
+    res.json({ message: "User Profile Deleted" });
+});
 
 module.exports = {
     getAllUsers,

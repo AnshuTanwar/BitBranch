@@ -237,6 +237,79 @@ async function deleteRepositoryById(req, res) {
     }
 }
 
+// ⭐ Star a repository
+async function starRepository(req, res) {
+    const userId = req.user;
+    const { id } = req.params;
+
+    try {
+        const repo = await Repository.findById(id);
+        if (!repo) return res.status(404).json({ message: "Repository not found" });
+
+        const user = await User.findById(userId);
+
+        // check if already starred
+        if (user.starredRepos.includes(id)) {
+            return res.status(400).json({ message: "Repository already starred" });
+        }
+
+        // update user + repo
+        user.starredRepos.push(id);
+        repo.stars += 1;
+
+        await user.save();
+        await repo.save();
+
+        res.json({ message: "Repository starred successfully", stars: repo.stars });
+    } catch (err) {
+        console.error("Error starring repo:", err.message);
+        res.status(500).send("Server error");
+    }
+}
+
+//  ⭐ Unstar a repository
+async function unstarRepository(req, res) {
+    const userId = req.user;
+    const { id } = req.params;
+
+    try {
+        const repo = await Repository.findById(id);
+        if (!repo) return res.status(404).json({ message: "Repository not found" });
+
+        const user = await User.findById(userId);
+
+        // check if repo was starred
+        if (!user.starredRepos.includes(id)) {
+            return res.status(400).json({ message: "Repository not starred yet" });
+        }
+
+        // update user + repo
+        user.starredRepos = user.starredRepos.filter(r => r.toString() !== id);
+        repo.stars = Math.max(repo.stars - 1, 0);
+
+        await user.save();
+        await repo.save();
+
+        res.json({ message: "Repository unstarred successfully", stars: repo.stars });
+    } catch (err) {
+        console.error("Error unstarring repo:", err.message);
+        res.status(500).send("Server error");
+    }
+}
+
+// ⭐ Get all starred repos of current user
+async function getStarredRepositories(req, res) {
+    const userId = req.user;
+
+    try {
+        const user = await User.findById(userId).populate("starredRepos");
+        res.json(user.starredRepos || []);
+    } catch (err) {
+        console.error("Error fetching starred repos:", err.message);
+        res.status(500).send("Server error");
+    }
+}
+
 module.exports = {
     createRepository,
     getAllRepository,
@@ -246,4 +319,7 @@ module.exports = {
     updateRepositoryById,
     toggleVisibilityById,
     deleteRepositoryById,
+    starRepository,
+    unstarRepository,
+    getStarredRepositories,
 };

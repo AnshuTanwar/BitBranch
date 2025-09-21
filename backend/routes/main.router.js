@@ -2,6 +2,7 @@ const express = require("express");
 const userRouter = require("./user.router.js");
 const repoRouter = require("./repo.router.js");
 const issueRouter = require("./issue.router.js");
+const socialRouter = require("./userSocial.router.js");
 
 const mainRouter = express.Router();
 
@@ -9,9 +10,9 @@ mainRouter.get("/health", (req, res) => {
     res.send("API is working!");
 });
 
-// Mount all routers with prefixes
 mainRouter.use("/users", userRouter);
 mainRouter.use("/repos", repoRouter);
 mainRouter.use("/issues", issueRouter);
+mainRouter.use("/social", socialRouter);
 
 module.exports = mainRouter;
