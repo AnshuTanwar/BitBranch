@@ -14,7 +14,7 @@ tmp
 dist
 build
 
-# Git
+# Gitx
 .git
 .gitignore
 
