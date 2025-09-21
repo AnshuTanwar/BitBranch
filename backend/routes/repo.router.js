@@ -17,4 +17,12 @@ repoRouter.put("/:id", authMiddleware, repoIdParam, validate, repoController.upd
 repoRouter.patch("/:id/visibility", authMiddleware, repoIdParam, validate, repoController.toggleVisibilityById);
 repoRouter.delete("/:id", authMiddleware, repoIdParam, validate, repoController.deleteRepositoryById);
 
+// Star/Unstar
+repoRouter.post("/:id/star", authMiddleware, repoController.starRepository);
+repoRouter.delete("/:id/star", authMiddleware, repoController.unstarRepository);
+
+// Get all starred repos of current user
+repoRouter.get("/starred/me", authMiddleware, repoController.getStarredRepositories);
+
+
 module.exports = repoRouter;

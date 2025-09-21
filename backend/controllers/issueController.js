@@ -1,154 +1,242 @@
-const mongoose = require("mongoose");
-const Repository = require("../models/repoModel.js");
+// controllers/issueController.js
+const asyncHandler = require("../utils/asyncHandler");
 const Issue = require("../models/issueModel.js");
+const Comment = require("../models/commentModel.js");
+const Repository = require("../models/repoModel.js");
+const User = require("../models/userModel.js");
 
 /**
- * @desc   Create new issue in a repository
- * @route  POST /issues/:repoId
+ * @route POST /issues/create/:repoId
  * @access Private
  */
-async function createIssue(req, res) {
-    const { title, description } = req.body;
+const createIssue = asyncHandler(async (req, res) => {
+    const { title, description, priority, labels } = req.body;
     const { repoId } = req.params;
+    const authorId = req.user;
 
-    try {
-        if (!mongoose.Types.ObjectId.isValid(repoId)) {
-            return res.status(400).json({ error: "Invalid repository ID" });
-        }
+    // repo must exist
+    const repo = await Repository.findById(repoId);
+    if (!repo) return res.status(404).json({ message: "Repository not found" });
 
-        const repo = await Repository.findById(repoId);
-        if (!repo) {
-            return res.status(404).json({ error: "Repository not found" });
-        }
+    const issue = new Issue({
+        title,
+        description,
+        priority: priority || undefined,
+        labels: Array.isArray(labels) ? labels : [],
+        repository: repoId,
+        author: authorId,
+    });
 
-        const issue = new Issue({
-            title,
-            description,
-            repository: repoId,
-        });
+    await issue.save();
 
-        await issue.save();
+    // optional: populate author before sending
+    await issue.populate("author", "username email");
 
-        // Push issue id into repository.issues[]
-        repo.issues.push(issue._id);
-        await repo.save();
-
-        res.status(201).json({
-            message: "Issue created successfully",
-            issue,
-        });
-    } catch (err) {
-        console.error("Error creating issue:", err.message);
-        res.status(500).send("Server error");
-    }
-}
+    res.status(201).json(issue);
+});
 
 /**
- * @desc   Update issue
- * @route  PUT /issues/:id
- * @access Private
- */
-async function updateIssueById(req, res) {
-    const { id } = req.params;
-    const { title, description, status } = req.body;
-
-    try {
-        const issue = await Issue.findById(id);
-
-        if (!issue) {
-            return res.status(404).json({ error: "Issue not found!" });
-        }
-
-        if (title) issue.title = title;
-        if (description) issue.description = description;
-        if (status) issue.status = status;
-
-        await issue.save();
-
-        res.json({
-            message: "Issue updated successfully",
-            issue,
-        });
-    } catch (err) {
-        console.error("Error updating issue:", err.message);
-        res.status(500).send("Server error");
-    }
-}
-
-/**
- * @desc   Delete issue
- * @route  DELETE /issues/:id
- * @access Private
- */
-async function deleteIssueById(req, res) {
-    const { id } = req.params;
-
-    try {
-        const issue = await Issue.findByIdAndDelete(id);
-
-        if (!issue) {
-            return res.status(404).json({ error: "Issue not found!" });
-        }
-
-        // Remove from repo.issues array also
-        await Repository.findByIdAndUpdate(issue.repository, {
-            $pull: { issues: issue._id },
-        });
-
-        res.json({ message: "Issue deleted successfully" });
-    } catch (err) {
-        console.error("Error deleting issue:", err.message);
-        res.status(500).send("Server error");
-    }
-}
-
-/**
- * @desc   Get all issues for a repository
- * @route  GET /issues/repo/:repoId
+ * @route GET /issues/repo/:repoId
  * @access Public
  */
-async function getAllIssues(req, res) {
+const getAllIssues = asyncHandler(async (req, res) => {
     const { repoId } = req.params;
 
-    try {
-        const issues = await Issue.find({ repository: repoId });
+    const issues = await Issue.find({ repository: repoId })
+    .populate("author", "username email")
+    .populate("assignee", "username email")
+    .populate({
+        path: "comments",
+        populate: { path: "author", select: "username email" },
+    })
+    .sort({ createdAt: -1 });
 
-        if (!issues || issues.length === 0) {
-            return res.status(404).json({ error: "No issues found" });
-        }
-
-        res.status(200).json(issues);
-    } catch (err) {
-        console.error("Error fetching issues:", err.message);
-        res.status(500).send("Server error");
-    }
-}
+    res.json(issues);
+});
 
 /**
- * @desc   Get issue by ID
- * @route  GET /issues/:id
+ * @route GET /issues/:id
  * @access Public
  */
-async function getIssueById(req, res) {
+const getIssueById = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    try {
-        const issue = await Issue.findById(id);
 
-        if (!issue) {
-            return res.status(404).json({ error: "Issue not found!" });
-        }
+    const issue = await Issue.findById(id)
+    .populate("author", "username email")
+    .populate("assignee", "username email")
+    .populate({
+        path: "comments",
+        populate: { path: "author", select: "username email" },
+    });
 
-        res.json(issue);
-    } catch (err) {
-        console.error("Error fetching issue:", err.message);
-        res.status(500).send("Server error");
+    if (!issue) return res.status(404).json({ message: "Issue not found" });
+
+    res.json(issue);
+});
+
+/**
+ * @route PUT /issues/update/:id
+ * @access Private (author or repo owner)
+ */
+const updateIssueById = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { title, description, priority, labels } = req.body;
+    const userId = req.user;
+
+    const issue = await Issue.findById(id);
+    if (!issue) return res.status(404).json({ message: "Issue not found" });
+
+    const repo = await Repository.findById(issue.repository);
+    // only issue author or repo owner can update general fields
+    if (issue.author.toString() !== userId && repo.owner.toString() !== userId) {
+        return res.status(403).json({ message: "Not authorized" });
     }
-}
+
+    if (title) issue.title = title;
+    if (description) issue.description = description;
+    if (priority) issue.priority = priority;
+    if (labels) issue.labels = labels;
+
+    await issue.save();
+
+    await issue.populate("author", "username email").populate("assignee", "username email");
+
+    res.json(issue);
+});
+
+/**
+ * @route PUT /issues/:id/status
+ * @access Private (author | assignee | repo owner)
+ */
+const updateIssueStatus = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    const userId = req.user;
+
+    const issue = await Issue.findById(id);
+    if (!issue) return res.status(404).json({ message: "Issue not found" });
+
+    const repo = await Repository.findById(issue.repository);
+
+    const allowed =
+        issue.author?.toString() === userId ||
+        (issue.assignee && issue.assignee.toString() === userId) ||
+        (repo && repo.owner.toString() === userId);
+
+    if (!allowed) return res.status(403).json({ message: "Not authorized to change status" });
+
+    issue.status = status;
+    await issue.save();
+
+    res.json(issue);
+});
+
+/**
+ * @route PUT /issues/:id/assign
+ * @access Private (repo owner | issue author)
+ * body: { userId }
+ */
+const assignIssue = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { userId } = req.body;
+    const requester = req.user;
+
+    const issue = await Issue.findById(id);
+    if (!issue) return res.status(404).json({ message: "Issue not found" });
+
+    const repo = await Repository.findById(issue.repository);
+
+    if (repo.owner.toString() !== requester && issue.author.toString() !== requester) {
+        return res.status(403).json({ message: "Not authorized to assign issue" });
+    }
+
+    // validate assignee exists
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "Assignee user not found" });
+
+    issue.assignee = userId;
+    await issue.save();
+
+    await issue.populate("assignee", "username email");
+
+    res.json(issue);
+});
+
+/**
+ * @route POST /issues/:id/comments
+ * @access Private
+ * body: { content }
+ */
+const addComment = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { content } = req.body;
+    const authorId = req.user;
+
+    const issue = await Issue.findById(id);
+    if (!issue) return res.status(404).json({ message: "Issue not found" });
+
+    const comment = new Comment({
+        content,
+        author: authorId,
+        issue: id,
+    });
+
+    await comment.save();
+
+    // push comment into issue.comments
+    issue.comments.push(comment._id);
+    await issue.save();
+
+    await comment.populate("author", "username email");
+
+    res.status(201).json(comment);
+});
+
+/**
+ * @route GET /issues/:id/comments
+ * @access Public
+ */
+const getComments = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const comments = await Comment.find({ issue: id })
+    .populate("author", "username email")
+    .sort({ createdAt: -1 });
+
+    res.json(comments);
+});
+
+/**
+ * @route DELETE /issues/delete/:id
+ * @access Private (repo owner | issue author)
+ */
+const deleteIssueById = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const requester = req.user;
+
+    const issue = await Issue.findById(id);
+    if (!issue) return res.status(404).json({ message: "Issue not found" });
+
+    const repo = await Repository.findById(issue.repository);
+    if (repo.owner.toString() !== requester && issue.author.toString() !== requester) {
+        return res.status(403).json({ message: "Not authorized to delete issue" });
+    }
+
+    // delete related comments
+    await Comment.deleteMany({ issue: issue._id });
+
+    await issue.deleteOne();
+
+    res.json({ message: "Issue deleted" });
+});
 
 module.exports = {
     createIssue,
-    updateIssueById,
-    deleteIssueById,
     getAllIssues,
     getIssueById,
+    updateIssueById,
+    updateIssueStatus,
+    assignIssue,
+    addComment,
+    getComments,
+    deleteIssueById,
 };

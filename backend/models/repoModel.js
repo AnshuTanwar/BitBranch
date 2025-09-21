@@ -1,36 +1,24 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-const RepositorySchema = new Schema({
-    name: {
-        type: String,
-        required: true,
-        unique: true,
-    },
-    description: {
-        type: String,
-    },
-    content: [
-        {
-            type: String,
-        },
-    ],
-    visibility: {
-        type: Boolean,
-    },
-    owner: {
-        type: Schema.Types.ObjectId,
-        ref: "User",
-        required: true,
-    },
-    issues: [
-        {
-            type: Schema.Types.ObjectId,
-            ref: "Issue",
-        },
-    ],
-});
+const repoSchema = new Schema(
+    {
+        name: { type: String, required: true },
+        description: { type: String },
+        visibility: { type: Boolean, default: true }, // true = public, false = private
+        owner: { type: Schema.Types.ObjectId, ref: "User", required: true },
+        content: [{ type: String }],
 
-const Repository = mongoose.model("Repository", RepositorySchema);
+        // ⭐ New fields
+        stars: { type: Number, default: 0 },
+        contributors: [{ type: Schema.Types.ObjectId, ref: "User" }],
 
-module.exports = Repository;
+        // issues array (already in your current model)
+        issues: [{ type: Schema.Types.ObjectId, ref: "Issue" }],
+    },
+    {
+        timestamps: true, // adds createdAt + updatedAt
+    }
+);
+
+module.exports = mongoose.model("Repository", repoSchema);
