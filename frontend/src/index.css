@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 120 100% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 120 100% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 120 100% 15%;
+    --primary: 120 60% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 120 20% 90%;
+    --secondary-foreground: 120 100% 15%;
+    --muted: 120 15% 95%;
+    --muted-foreground: 120 10% 45%;
+    --accent: 120 30% 85%;
+    --accent-foreground: 120 100% 15%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 120 20% 85%;
+    --input: 120 20% 92%;
+    --ring: 120 60% 45%;
+    --radius: 0.5rem;
+    --glass-border: 120 30% 85%;
+    --warning: 38 92% 50%;
+    --success: 120 60% 45%;
+  }
+
+  .dark {
+    --background: 120 15% 8%;
+    --foreground: 120 20% 95%;
+    --card: 120 15% 10%;
+    --card-foreground: 120 20% 95%;
+    --popover: 120 15% 10%;
+    --popover-foreground: 120 20% 95%;
+    --primary: 120 50% 55%;
+    --primary-foreground: 120 15% 8%;
+    --secondary: 120 10% 20%;
+    --secondary-foreground: 120 20% 95%;
+    --muted: 120 10% 20%;
+    --muted-foreground: 120 15% 65%;
+    --accent: 120 15% 25%;
+    --accent-foreground: 120 20% 95%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 120 20% 95%;
+    --border: 120 10% 20%;
+    --input: 120 10% 20%;
+    --ring: 120 50% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    margin: 0;
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply backdrop-blur-md bg-green-50/80 border border-green-200/50 shadow-xl;
+  }
+  
+  .glass-button {
+    @apply backdrop-blur-md bg-green-50/60 border border-green-200/50 hover:bg-green-100/70 transition-all duration-200;
+  }
+  
+  .glass-border {
+    @apply border-green-200/50;
+  }
+}
