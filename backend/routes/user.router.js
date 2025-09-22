@@ -16,6 +16,7 @@ userRouter.post("/login",  loginValidator,  validate, userController.login);
 
 // Protected
 userRouter.get("/", authMiddleware, userController.getAllUsers);
+userRouter.get("/me", authMiddleware, userController.getCurrentUser);
 userRouter.get("/:id", authMiddleware, userIdParam, validate, userController.getUserProfile);
 userRouter.put("/:id", authMiddleware, userIdParam, validate, userController.updateUserProfile);
 userRouter.delete("/:id", authMiddleware, userIdParam, validate, userController.deleteUserProfile);

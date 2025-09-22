@@ -71,8 +71,14 @@ async function getAllRepository(req, res) {
  */
 async function fetchRepositoryById(req, res) {
     const { id } = req.params;
+    
+    console.log('=== FETCH REPOSITORY BY ID ===');
+    console.log('Request URL:', req.originalUrl);
+    console.log('Request params:', req.params);
+    console.log('Fetching repository with ID:', id); // Debug log
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
+        console.log('Invalid ObjectId:', id); // Debug log
         return res.status(400).json({ message: "Invalid repository ID" });
     }
 
@@ -80,6 +86,8 @@ async function fetchRepositoryById(req, res) {
         const repository = await Repository.findById(id)
             .populate("owner", "username email")
             .populate("issues");
+
+        console.log('Repository found:', repository ? 'Yes' : 'No'); // Debug log
 
         if (!repository) {
             return res.status(404).json({ message: "Repository not found" });
@@ -123,16 +131,22 @@ async function fetchRepositoryByName(req, res) {
 async function fetchRepositoryForCurrentUser(req, res) {
     const userId = req.user;
     try {
-        const repositories = await Repository.find({ owner: userId });
+        const repositories = await Repository.find({ owner: userId })
+            .populate('owner', 'username email')
+            .populate('issues');
 
-        if (!repositories || repositories.length === 0) {
-            return res.status(404).json({ error: "User Repositories not found" });
-        }
-
-        res.json(repositories);
+        // Return structured response format
+        res.json({ 
+            success: true, 
+            repos: repositories 
+        });
     } catch (err) {
         console.error("Error fetching current user repositories: ", err.message);
-        res.status(500).send("Server Error");
+        res.status(500).json({ 
+            success: false, 
+            message: "Server Error",
+            error: err.message 
+        });
     }
 }
 

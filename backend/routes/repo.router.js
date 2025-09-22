@@ -8,21 +8,21 @@ const repoRouter = express.Router();
 
 // Public Routes
 repoRouter.get("/all", repoController.getAllRepository);
-repoRouter.get("/:id", repoIdParam, validate, repoController.fetchRepositoryById);
 
-// Protected Routes
+// Protected Routes - IMPORTANT: Specific routes MUST come before parameterized routes
 repoRouter.post("/", authMiddleware, createRepoValidator, validate, repoController.createRepository);
 repoRouter.get("/my", authMiddleware, repoController.fetchRepositoryForCurrentUser);
-repoRouter.put("/:id", authMiddleware, repoIdParam, validate, repoController.updateRepositoryById);
-repoRouter.patch("/:id/visibility", authMiddleware, repoIdParam, validate, repoController.toggleVisibilityById);
-repoRouter.delete("/:id", authMiddleware, repoIdParam, validate, repoController.deleteRepositoryById);
+repoRouter.get("/starred/me", authMiddleware, repoController.getStarredRepositories);
 
-// Star/Unstar
+// Star/Unstar routes - Must come before /:id routes
 repoRouter.post("/:id/star", authMiddleware, repoController.starRepository);
 repoRouter.delete("/:id/star", authMiddleware, repoController.unstarRepository);
 
-// Get all starred repos of current user
-repoRouter.get("/starred/me", authMiddleware, repoController.getStarredRepositories);
+// Parameterized routes - MUST come last to avoid conflicts
+repoRouter.get("/:id", repoController.fetchRepositoryById); // Temporarily removed validation
+repoRouter.put("/:id", authMiddleware, repoIdParam, validate, repoController.updateRepositoryById);
+repoRouter.patch("/:id/visibility", authMiddleware, repoIdParam, validate, repoController.toggleVisibilityById);
+repoRouter.delete("/:id", authMiddleware, repoIdParam, validate, repoController.deleteRepositoryById);
 
 
 module.exports = repoRouter;

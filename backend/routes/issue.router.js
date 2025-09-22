@@ -44,10 +44,15 @@ issueRouter.delete(
 issueRouter.put("/:id/status", authMiddleware, statusValidator, validate, issueController.updateIssueStatus);
 issueRouter.put("/:id/assign", authMiddleware, assignValidator, validate, issueController.assignIssue);
 issueRouter.post("/:id/comments", authMiddleware, commentValidator, validate, issueController.addComment);
+issueRouter.put("/:id/comments/:commentId", authMiddleware, commentValidator, validate, issueController.updateComment);
+issueRouter.delete("/:id/comments/:commentId", authMiddleware, issueController.deleteComment);
+issueRouter.patch("/:id/close", authMiddleware, issueIdParam, validate, issueController.closeIssue);
+issueRouter.patch("/:id/reopen", authMiddleware, issueIdParam, validate, issueController.reopenIssue);
 
 // Public
-issueRouter.get("/repo/:repoId", repoIdParam, validate, issueController.getAllIssues);
-issueRouter.get("/:id", issueIdParam, validate, issueController.getIssueById);
-issueRouter.get("/:id/comments", issueIdParam, validate, issueController.getComments);
+issueRouter.get("/", issueController.getAllIssuesGlobal);
+issueRouter.get("/repo/:repoId", issueController.getAllIssues); // Temporarily removed validation
+issueRouter.get("/:id", issueController.getIssueById); // Temporarily removed validation
+issueRouter.get("/:id/comments", issueController.getComments); // Temporarily removed validation
 
 module.exports = issueRouter;
