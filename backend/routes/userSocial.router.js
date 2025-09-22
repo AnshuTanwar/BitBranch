@@ -10,6 +10,7 @@ socialRouter.delete("/:id/follow", authMiddleware, socialController.unfollowUser
 // Followers / Following
 socialRouter.get("/:id/followers", socialController.getFollowers);
 socialRouter.get("/:id/following", socialController.getFollowing);
+socialRouter.get("/:id/is-following", authMiddleware, socialController.isFollowing);
 
 // Repo Stars
 socialRouter.post("/repos/:id/star", authMiddleware, socialController.starRepo);

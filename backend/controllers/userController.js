@@ -59,6 +59,21 @@ const login = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc   Get current user (from token)
+ * @route  GET /users/me
+ */
+const getCurrentUser = asyncHandler(async (req, res) => {
+    const userId = req.user; // From auth middleware
+    const user = await User.findById(userId)
+        .select("-password")
+        .populate("followers", "username email")
+        .populate("following", "username email")
+        .populate("starredRepos", "name description");
+    if (!user) throw new AppError("User not found", 404);
+    res.json(user);
+});
+
+/**
  * @desc   Get user profile
  * @route  GET /users/:id
  */
@@ -107,6 +122,7 @@ module.exports = {
     getAllUsers,
     signup,
     login,
+    getCurrentUser,
     getUserProfile,
     updateUserProfile,
     deleteUserProfile,

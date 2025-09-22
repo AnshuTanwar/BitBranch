@@ -60,6 +60,24 @@ const getFollowing = asyncHandler(async (req, res) => {
     res.json({ following: user.following });
 });
 
+// Check if current user is following a specific user
+const isFollowing = asyncHandler(async (req, res) => {
+    const { id } = req.params; // user to check
+    const currentUserId = req.user; // current logged-in user
+
+    if (!currentUserId) {
+        return res.json({ isFollowing: false });
+    }
+
+    const currentUser = await User.findById(currentUserId);
+    if (!currentUser) {
+        return res.json({ isFollowing: false });
+    }
+
+    const isFollowingUser = currentUser.following.includes(id);
+    res.json({ isFollowing: isFollowingUser });
+});
+
 // Star a repository
 const starRepo = asyncHandler(async (req, res) => {
     const { id } = req.params; // repo id
@@ -106,6 +124,7 @@ module.exports = {
     unfollowUser,
     getFollowers,
     getFollowing,
+    isFollowing,
     starRepo,
     unstarRepo,
     getStarredRepos,

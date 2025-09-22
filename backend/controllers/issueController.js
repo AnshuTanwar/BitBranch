@@ -36,21 +36,41 @@ const createIssue = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @route GET /issues
+ * @access Public
+ */
+const getAllIssuesGlobal = asyncHandler(async (req, res) => {
+    console.log('=== GET ALL ISSUES GLOBAL ===');
+    console.log('Request URL:', req.originalUrl);
+    
+    const issues = await Issue.find()
+        .populate("author", "username")
+        .populate("assignee", "username")
+        .populate("repository", "name")
+        .sort({ createdAt: -1 });
+
+    console.log('Found issues:', issues.length);
+    res.json(issues);
+});
+
+/**
  * @route GET /issues/repo/:repoId
  * @access Public
  */
 const getAllIssues = asyncHandler(async (req, res) => {
     const { repoId } = req.params;
+    
+    console.log('=== GET REPOSITORY ISSUES ===');
+    console.log('Request URL:', req.originalUrl);
+    console.log('Repository ID:', repoId);
 
     const issues = await Issue.find({ repository: repoId })
-    .populate("author", "username email")
-    .populate("assignee", "username email")
-    .populate({
-        path: "comments",
-        populate: { path: "author", select: "username email" },
-    })
-    .sort({ createdAt: -1 });
+        .populate("author", "username")
+        .populate("assignee", "username")
+        .populate("repository", "name")
+        .sort({ createdAt: -1 });
 
+    console.log('Found issues for repo:', issues.length);
     res.json(issues);
 });
 
@@ -60,16 +80,21 @@ const getAllIssues = asyncHandler(async (req, res) => {
  */
 const getIssueById = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    
+    console.log('=== GET ISSUE BY ID ===');
+    console.log('Request URL:', req.originalUrl);
+    console.log('Issue ID:', id);
 
     const issue = await Issue.findById(id)
-    .populate("author", "username email")
-    .populate("assignee", "username email")
-    .populate({
-        path: "comments",
-        populate: { path: "author", select: "username email" },
-    });
+        .populate("author", "username email")
+        .populate("assignee", "username email")
+        .populate("repository", "name owner");
 
-    if (!issue) return res.status(404).json({ message: "Issue not found" });
+    console.log('Issue found:', issue ? 'Yes' : 'No');
+
+    if (!issue) {
+        return res.status(404).json({ message: "Issue not found" });
+    }
 
     res.json(issue);
 });
@@ -206,6 +231,54 @@ const getComments = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @route PUT /issues/:id/comments/:commentId
+ * @access Private (comment author only)
+ */
+const updateComment = asyncHandler(async (req, res) => {
+    const { id, commentId } = req.params;
+    const { content } = req.body;
+    const userId = req.user;
+
+    const comment = await Comment.findById(commentId);
+    if (!comment) {
+        return res.status(404).json({ message: "Comment not found" });
+    }
+
+    // Check if user is the author of the comment
+    if (comment.author.toString() !== userId) {
+        return res.status(403).json({ message: "Not authorized to update this comment" });
+    }
+
+    comment.content = content;
+    await comment.save();
+
+    await comment.populate("author", "username email");
+    res.json(comment);
+});
+
+/**
+ * @route DELETE /issues/:id/comments/:commentId
+ * @access Private (comment author only)
+ */
+const deleteComment = asyncHandler(async (req, res) => {
+    const { id, commentId } = req.params;
+    const userId = req.user;
+
+    const comment = await Comment.findById(commentId);
+    if (!comment) {
+        return res.status(404).json({ message: "Comment not found" });
+    }
+
+    // Check if user is the author of the comment
+    if (comment.author.toString() !== userId) {
+        return res.status(403).json({ message: "Not authorized to delete this comment" });
+    }
+
+    await Comment.findByIdAndDelete(commentId);
+    res.json({ message: "Comment deleted successfully" });
+});
+
+/**
  * @route DELETE /issues/delete/:id
  * @access Private (repo owner | issue author)
  */
@@ -229,8 +302,51 @@ const deleteIssueById = asyncHandler(async (req, res) => {
     res.json({ message: "Issue deleted" });
 });
 
+/**
+ * @route PATCH /issues/:id/close
+ * @access Private
+ */
+const closeIssue = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    
+    const issue = await Issue.findByIdAndUpdate(
+        id,
+        { status: "closed" },
+        { new: true }
+    ).populate("author", "username email")
+     .populate("assignee", "username email");
+
+    if (!issue) {
+        return res.status(404).json({ message: "Issue not found" });
+    }
+
+    res.json(issue);
+});
+
+/**
+ * @route PATCH /issues/:id/reopen
+ * @access Private
+ */
+const reopenIssue = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    
+    const issue = await Issue.findByIdAndUpdate(
+        id,
+        { status: "open" },
+        { new: true }
+    ).populate("author", "username email")
+     .populate("assignee", "username email");
+
+    if (!issue) {
+        return res.status(404).json({ message: "Issue not found" });
+    }
+
+    res.json(issue);
+});
+
 module.exports = {
     createIssue,
+    getAllIssuesGlobal,
     getAllIssues,
     getIssueById,
     updateIssueById,
@@ -238,5 +354,9 @@ module.exports = {
     assignIssue,
     addComment,
     getComments,
+    updateComment,
+    deleteComment,
     deleteIssueById,
+    closeIssue,
+    reopenIssue,
 };
