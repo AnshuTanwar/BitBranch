@@ -16,7 +16,7 @@ async function startServer() {
 
     // Middlewares
     app.use(express.json());
-    app.use(cors({ origin: process.env.CLIENT_URL || "https://bit-branch.vercel.app/" }));
+    app.use(cors({ origin: "https://bit-branch.vercel.app", credentials: true }));
 
     // DB Connection
     await connectDB(mongoURI);
