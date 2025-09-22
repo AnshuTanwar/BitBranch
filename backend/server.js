@@ -14,9 +14,26 @@ async function startServer() {
     const port = process.env.PORT || 5050;
     const mongoURI = process.env.MONGODB_URI;
 
-    // Middlewares
+    // Allowed origins
+    const allowedOrigins = [
+        "https://bit-branch.vercel.app",
+        "https://bit-branch-mgfsf9ee6-anshutanwars-projects.vercel.app"
+    ];
+
+    // CORS middleware
+    app.use(cors({
+        origin: (origin, callback) => {
+            if (!origin || allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
+                callback(null, true);
+            } else {
+                callback(new Error("Not allowed by CORS"));
+            }
+        },
+        credentials: true
+    }));
+
+    // Middleware
     app.use(express.json());
-    app.use(cors({ origin: "https://bit-branch.vercel.app", credentials: true }));
 
     // DB Connection
     await connectDB(mongoURI);
