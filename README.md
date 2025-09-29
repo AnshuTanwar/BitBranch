@@ -237,5 +237,3 @@ node cli.js log --oneline
 
 **Aanshu Tanwar**
 A final-year engineer exploring **backend systems, cloud, and DevOps** 
-
-```
