@@ -1,357 +1,55 @@
-# BitBranch
+# 🚀 BitBranch
 
-A lightweight Git + GitHub–like backend + CLI built with Node.js + MongoDB.
-BitBranch mimics core Git workflows: init, add, commit, branch, checkout, log, push/pull, and more.
-It also provides a **REST API** for authentication, repositories, issues, and real-time events.
+![Node.js](https://img.shields.io/badge/Node.js-18+-green?logo=node.js)
+![React](https://img.shields.io/badge/React-18+-blue?logo=react)
+![Vite](https://img.shields.io/badge/Vite-frontend-purple?logo=vite)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.x-38B2AC?logo=tailwind-css)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
----
-
-## Features (Backend)
-
-* **User Authentication** – JWT-based login/signup.
-* **Repository Management** – Create, update, delete repos with visibility toggle.
-* **Issue Tracking** – Per-repository issues with CRUD.
-* **Real-time Events** – WebSockets (Socket.IO) for notifications.
-* **AI Commit Messages** – via Google Gemini.
-* **Code Quality Scoring** – ESLint integration.
+BitBranch is a **full-stack project** with a **Node.js backend (CLI + API + Docker)** and a **modern React + Vite + Tailwind frontend**.  
+It provides both a **web interface** and a **command-line tool** for managing branches, commits, and version control operations in a streamlined way.  
 
 ---
 
-## ⚡ API Reference
+## ✨ Features
 
-### Authentication
+### 🔧 Backend (Node.js + Express + CLI)
+- Command Line Interface for:
+  - `add`, `branch`, `checkout`, `commit`, `diff`, and more
+- RESTful API endpoints
+- Docker support with `Dockerfile` and `docker-compose.yml`
+- Configurable environment via `.bitbranchignore` and `.env`
 
-#### **Signup**
+### 🎨 Frontend (React + Vite + Tailwind + TypeScript)
+- Responsive, modern UI powered by TailwindCSS
+- Fast build with Vite
+- TypeScript support for type safety
+- Configurable via `components.json` and `vite.config.js`
 
-`POST /users/signup`
-
-**Body:**
-
-```json
-{
-  "username": "john_doe",
-  "email": "john@example.com",
-  "password": "securePass123"
-}
-```
-
-**Response:**
-
-```json
-{
-  "token": "jwt_token_here",
-  "userId": "64fa2c...."
-}
-```
+### ⚙️ General
+- Full-stack modular structure (`frontend/` + `backend/`)
+- Easy to extend and maintain
+- Open-source under MIT License
 
 ---
 
-#### **Login**
+---
 
-`POST /users/login`
+## 🛠️ Tech Stack
 
-**Body:**
+**Frontend:**
+- React
+- Vite
+- TailwindCSS
+- JavaScript
 
-```json
-{
-  "email": "john@example.com",
-  "password": "securePass123"
-}
-```
-
-**Response:**
-
-```json
-{
-  "token": "jwt_token_here",
-  "userId": "64fa2c...."
-}
-```
+**Backend:**
+- Node.js
+- Express
+- CLI utilities
+- Docker & Docker Compose
 
 ---
 
-### Users
 
-#### **Get All Users**
-
-`GET /users/`
-Headers: `Authorization: Bearer <token>`
-
-**Response:**
-
-```json
-[
-  {
-    "_id": "64fa2c....",
-    "username": "john_doe",
-    "email": "john@example.com"
-  }
-]
-```
-
----
-
-#### **Get User Profile**
-
-`GET /users/:id`
-Protected
-
-**Response:**
-
-```json
-{
-  "_id": "64fa2c...",
-  "username": "john_doe",
-  "email": "john@example.com"
-}
-```
-
----
-
-#### **Update Profile**
-
-`PUT /users/:id`
-Protected
-
-**Body:**
-
-```json
-{
-  "email": "new@example.com",
-  "password": "newPass"
-}
-```
-
----
-
-#### **Delete Profile**
-
-`DELETE /users/:id`
-Protected
-
-**Response:**
-
-```json
-{
-  "message": "User Profile Deleted"
-}
-```
-
----
-
-### Repositories
-
-#### **Create Repository**
-
-`POST /repos/create`
-Protected
-
-**Body:**
-
-```json
-{
-  "name": "bitbranch-demo",
-  "description": "my test repo",
-  "visibility": true,
-  "content": []
-}
-```
-
-**Response:**
-
-```json
-{
-  "message": "Repository Created!",
-  "repositoryID": "6501f2c..."
-}
-```
-
----
-
-#### **Get All Repositories**
-
-`GET /repos/all`
-
-Returns all repos with populated owner + issues.
-
----
-
-#### **Get Repository by ID**
-
-`GET /repos/:id`
-
----
-
-#### **Get Repository by Name**
-
-`GET /repos/name/:name`
-
----
-
-#### **Get My Repositories**
-
-`GET /repos/user/me`
-Protected
-
----
-
-#### **Update Repository**
-
-`PUT /repos/update/:id`
-Protected
-
-**Body:**
-
-```json
-{
-  "description": "updated repo desc",
-  "content": "new file content"
-}
-```
-
----
-
-#### **Toggle Visibility**
-
-`PATCH /repos/toggle/:id`
-Protected
-
-Toggles between public/private.
-
----
-
-#### **Delete Repository**
-
-`DELETE /repos/delete/:id`
-Protected
-
----
-
-### Issues
-
-#### **Create Issue**
-
-`POST /issues/create/:repoId`
-Protected
-
-**Body:**
-
-```json
-{
-  "title": "Bug in login",
-  "description": "Login fails with 500"
-}
-```
-
-**Response:**
-
-```json
-{
-  "_id": "6502a1...",
-  "title": "Bug in login",
-  "repository": "6501f2c..."
-}
-```
-
----
-
-#### **Update Issue**
-
-`PUT /issues/update/:id`
-Protected
-
-**Body:**
-
-```json
-{
-  "title": "Bug fixed",
-  "description": "fixed in commit abc",
-  "status": "closed"
-}
-```
-
----
-
-#### **Delete Issue**
-
-`DELETE /issues/delete/:id`
-Protected
-
----
-
-#### **Get Issues by Repo**
-
-`GET /issues/repo/:repoId`
-
----
-
-#### **Get Issue by ID**
-
-`GET /issues/:id`
-
----
-
-### Real-time (Socket.IO)
-
-* `joinRoom(userId)` – join personal room for notifications.
-* Auto logs connection/disconnection.
-* Future scope: push repo/issue updates to relevant users.
-
----
-
-## 🛠 Tech Stack
-
-* **Backend**: Node.js, Express, MongoDB (Mongoose)
-* **Auth**: JWT
-* **Real-time**: Socket.IO
-* **AI**: Google Gemini API
-* **Linting/Score**: ESLint
-* **Remote Sync**: AWS S3
-
----
-
-## 📂 Project Structure
-
-```
-backend/
-│── controllers/      # business logic
-│── models/           # mongoose schemas
-│── routes/           # user, repo, issue routers
-│── middleware/       # auth, error handling
-│── config/           # db, socket
-│── utils/            # helpers
-│── server.js         # entrypoint
-```
-
----
-
-## ⚡ Usage (API + CLI)
-
-* Run server:
-
-  ```bash
-  npm run dev
-  ```
-* Use CLI (init/add/commit):
-
-  ```bash
-  node cli.js init
-  node cli.js commit --ai
-  ```
-
----
-
-## Next Steps
-
-* Centralized error handling (AppError + global middleware).
-* Request validation (express-validator / zod).
-* Testing (Jest + Supertest).
-* Logging (Winston/Pino).
-* Deployment (Docker + CI/CD).
-
----
-
-## Author
-
-Built with ❤️ by **Aanshu Tanwar**
-Frontend Collaborator **Deepak**
